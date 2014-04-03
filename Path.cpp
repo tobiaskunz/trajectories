@@ -211,6 +211,8 @@ Path::Path(const list<VectorXd> &path, double maxDeviation) :
 			switchingPoints.push_back(make_pair(length + *point, false));
 		}
 		length += (*segment)->getLength();
+		while(!switchingPoints.empty() && switchingPoints.back().first >= length)
+			switchingPoints.pop_back();
 		switchingPoints.push_back(make_pair(length, true));
 	}
 	switchingPoints.pop_back();
