@@ -37,6 +37,7 @@
  */
 
 #include <iostream>
+#include <cstdio>
 #include <Eigen/Core>
 #include "Trajectory.h"
 #include "Path.h"
@@ -44,7 +45,7 @@
 using namespace std;
 using namespace Eigen;
 
-void main() {
+int main() {
 	list<VectorXd> waypoints;
 	VectorXd waypoint(3);
 	waypoint << 0.0, 0.0, 0.0;
