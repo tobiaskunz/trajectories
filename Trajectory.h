@@ -79,17 +79,13 @@ private:
 	bool getNextAccelerationSwitchingPoint(double pathPos, TrajectoryStep &nextSwitchingPoint, double &beforeAcceleration, double &afterAcceleration);
 	bool getNextVelocitySwitchingPoint(double pathPos, TrajectoryStep &nextSwitchingPoint, double &beforeAcceleration, double &afterAcceleration);
 	bool integrateForward(std::list<TrajectoryStep> &trajectory, double acceleration);
-	void integrateBackward(std::list<TrajectoryStep> &trajectory, std::list<TrajectoryStep> &startTrajectory, double acceleration);
+	void integrateBackward(std::list<TrajectoryStep> &startTrajectory, double pathPos, double pathVel, double acceleration);
 	double getMinMaxPathAcceleration(double pathPosition, double pathVelocity, bool max);
 	double getMinMaxPhaseSlope(double pathPosition, double pathVelocity, bool max);
 	double getAccelerationMaxPathVelocity(double pathPos) const;
 	double getVelocityMaxPathVelocity(double pathPos) const;
 	double getAccelerationMaxPathVelocityDeriv(double pathPos);
 	double getVelocityMaxPathVelocityDeriv(double pathPos);
-	
-	TrajectoryStep getIntersection(const std::list<TrajectoryStep> &trajectory, std::list<TrajectoryStep>::iterator &it, const TrajectoryStep &linePoint1, const TrajectoryStep &linePoint2);
-	inline double getSlope(const TrajectoryStep &point1, const TrajectoryStep &point2);
-	inline double getSlope(std::list<TrajectoryStep>::const_iterator lineEnd);
 	
 	std::list<TrajectoryStep>::const_iterator getTrajectorySegment(double time) const;
 	

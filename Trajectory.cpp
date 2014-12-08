@@ -61,21 +61,18 @@ Trajectory::Trajectory(const Path &path, const VectorXd &maxVelocity, const Vect
 {
 	trajectory.push_back(TrajectoryStep(0.0, 0.0));
 	double afterAcceleration = getMinMaxPathAcceleration(0.0, 0.0, true);
-	while(!integrateForward(trajectory, afterAcceleration) && valid) {
+	while(valid && !integrateForward(trajectory, afterAcceleration) && valid) {
 		double beforeAcceleration;
 		TrajectoryStep switchingPoint;
 		if(getNextSwitchingPoint(trajectory.back().pathPos, switchingPoint, beforeAcceleration, afterAcceleration)) {
 			break;
 		}
-		endTrajectory.push_back(switchingPoint);
-		integrateBackward(endTrajectory, trajectory, beforeAcceleration);
+		integrateBackward(trajectory, switchingPoint.pathPos, switchingPoint.pathVel, beforeAcceleration);
 	}
 
 	if(valid) {
-		endTrajectory.clear();
-		endTrajectory.push_front(TrajectoryStep(path.getLength(), 0.0));
 		double beforeAcceleration = getMinMaxPathAcceleration(path.getLength(), 0.0, false);
-		integrateBackward(endTrajectory, trajectory, beforeAcceleration);
+		integrateBackward(trajectory, path.getLength(), 0.0, beforeAcceleration);
 	}
 
 	if(valid) {
@@ -258,6 +255,7 @@ bool Trajectory::integrateForward(list<TrajectoryStep> &trajectory, double accel
 		}
 
 		if(pathPos > path.getLength()) {
+			trajectory.push_back(TrajectoryStep(pathPos, pathVel));
 			return true;
 		}
 		else if(pathVel < 0.0) {
@@ -279,10 +277,10 @@ bool Trajectory::integrateForward(list<TrajectoryStep> &trajectory, double accel
 			// find more accurate intersection with max-velocity curve using bisection
 			TrajectoryStep overshoot = trajectory.back();
 			trajectory.pop_back();
-			double slope = getSlope(trajectory.back(), overshoot);
+			double slope = (overshoot.pathVel - trajectory.back().pathVel) / (overshoot.pathPos - trajectory.back().pathPos);
 			double before = trajectory.back().pathPos;
 			double after = overshoot.pathPos;
-			while(after - before > 0.00001) {
+			while(after - before > eps) {
 				const double midpoint = 0.5 * (before + after);
 				double midpointPathVel = trajectory.back().pathVel + slope * (midpoint - trajectory.back().pathPos);
 
@@ -316,123 +314,52 @@ bool Trajectory::integrateForward(list<TrajectoryStep> &trajectory, double accel
 	}
 }
 
+void Trajectory::integrateBackward(list<TrajectoryStep> &startTrajectory, double pathPos, double pathVel, double acceleration) {
+	list<TrajectoryStep>::iterator start2 = startTrajectory.end();
+	start2--;
+	list<TrajectoryStep>::iterator start1 = start2;
+	start1--;
+	list<TrajectoryStep> trajectory;
+	double slope;
+	assert(start1->pathPos <= pathPos);
 
-void Trajectory::integrateBackward(list<TrajectoryStep> &trajectory, list<TrajectoryStep> &startTrajectory, double acceleration) {
-	list<TrajectoryStep>::reverse_iterator before = startTrajectory.rbegin();
-	double pathPos = trajectory.front().pathPos;
-	double pathVel = trajectory.front().pathVel;
-
-	while(true)
+	while(start1 != startTrajectory.begin() || pathPos >= 0.0)
 	{
-		double oldPathVel = pathVel;
-		pathVel -= timeStep * acceleration;
-		pathPos -= timeStep * 0.5 * (oldPathVel + pathVel);
-
-		trajectory.push_front(TrajectoryStep(pathPos, pathVel));
-		acceleration = getMinMaxPathAcceleration(pathPos, pathVel, false);
-
-		if(pathVel < 0.0 || pathPos < 0.0) {
-			valid = false;
-			cout << "error " << pathPos << " " << pathVel << endl;
-			return;
-		}
-
-		while(before != startTrajectory.rend() && before->pathPos > pathPos) {
-			before++;
-		}
-
-		if(before != startTrajectory.rbegin() && pathVel >= before->pathVel + getSlope(before.base()) * (pathPos - before->pathPos)) {
-			TrajectoryStep overshoot = trajectory.front();
-			trajectory.pop_front();
-			list<TrajectoryStep>::iterator after = before.base();
-			TrajectoryStep intersection = getIntersection(startTrajectory, after, overshoot, trajectory.front());
-		
-			if(after != startTrajectory.end()) {
-				startTrajectory.erase(after, startTrajectory.end());
-				startTrajectory.push_back(intersection);
-			}
-			startTrajectory.splice(startTrajectory.end(), trajectory);
-
-			return;
-		}
-		else if(pathVel > getAccelerationMaxPathVelocity(pathPos) + eps || pathVel > getVelocityMaxPathVelocity(pathPos) + eps) {
-			// find more accurate intersection with max-velocity curve using bisection
-			TrajectoryStep overshoot = trajectory.front();
-			trajectory.pop_front();
-			double slope = getSlope(overshoot, trajectory.front());
-			double before = overshoot.pathPos;
-			double after = trajectory.front().pathPos;
-			while(after - before > 0.00001) {
-				const double midpoint = 0.5 * (before + after);
-				double midpointPathVel = overshoot.pathVel + slope * (midpoint - overshoot.pathPos);
-
-				if(midpointPathVel > getAccelerationMaxPathVelocity(midpoint) || midpointPathVel > getVelocityMaxPathVelocity(midpoint))
-					before = midpoint;
-				else
-					after = midpoint;
-			}
-			trajectory.push_front(TrajectoryStep(after, overshoot.pathVel + slope * (after - overshoot.pathPos)));
-
-			if(getAccelerationMaxPathVelocity(before) < getVelocityMaxPathVelocity(before)) {
-				if(trajectory.front().pathVel > getAccelerationMaxPathVelocity(before) + 0.0001) {
-					cout << "error" << endl;
-					valid = false;
-					return;
-				}
-				else if(getMinMaxPhaseSlope(trajectory.front().pathPos, trajectory.front().pathVel, false) < getAccelerationMaxPathVelocityDeriv(trajectory.front().pathPos)) { 
-					cout << "error" << endl;
-					valid = false;
-					return;
-				}
-			}
-			else {
-				if(getMinMaxPhaseSlope(trajectory.back().pathPos, trajectory.back().pathVel, false) < getVelocityMaxPathVelocityDeriv(trajectory.back().pathPos)) {
-					cout << "error" << endl;
-					valid = false;
-					return;
-				}
-			}
+		if(start1->pathPos <= pathPos) {
+			trajectory.push_front(TrajectoryStep(pathPos, pathVel));
+			pathVel -= timeStep * acceleration;
+			pathPos -= timeStep * 0.5 * (pathVel + trajectory.front().pathVel);
+			acceleration = getMinMaxPathAcceleration(pathPos, pathVel, false);
+			slope = (trajectory.front().pathVel - pathVel) / (trajectory.front().pathPos - pathPos);
 			
+			if(pathVel < 0.0) {
+				valid = false;
+				cout << "Error while integrating backward: Negative path velocity" << endl;
+				endTrajectory = trajectory;
+				return;
+			}
+		}
+		else {
+			start1--;
+			start2--;
+		}
+
+		// check for intersection between current start trajectory and backward trajectory segments
+		const double startSlope = (start2->pathVel - start1->pathVel) / (start2->pathPos - start1->pathPos);
+		const double intersectionPathPos = (start1->pathVel - pathVel + slope * pathPos - startSlope * start1->pathPos) / (slope - startSlope);
+		if(max(start1->pathPos, pathPos) - eps <= intersectionPathPos && intersectionPathPos <= eps + min(start2->pathPos, trajectory.front().pathPos)) {
+			const double intersectionPathVel = start1->pathVel + startSlope * (intersectionPathPos - start1->pathPos);
+			startTrajectory.erase(start2, startTrajectory.end());
+			startTrajectory.push_back(TrajectoryStep(intersectionPathPos, intersectionPathVel));
+			startTrajectory.splice(startTrajectory.end(), trajectory);
+			return;
 		}
 	}
+
+	valid = false;
+	cout << "Error while integrating backward: Did not hit start trajectory" << endl;
+	endTrajectory = trajectory;
 }
-
-inline double Trajectory::getSlope(const TrajectoryStep &point1, const TrajectoryStep &point2) {
-	return (point2.pathVel - point1.pathVel) / (point2.pathPos - point1.pathPos);
-}
-
-inline double Trajectory::getSlope(list<TrajectoryStep>::const_iterator lineEnd) {
-	list<TrajectoryStep>::const_iterator lineStart = lineEnd;
-	lineStart--;
-	return getSlope(*lineStart, *lineEnd);
-}
-
-Trajectory::TrajectoryStep Trajectory::getIntersection(const list<TrajectoryStep> &trajectory, list<TrajectoryStep>::iterator &it, const TrajectoryStep &linePoint1, const TrajectoryStep &linePoint2) {
-	
-	const double lineSlope = getSlope(linePoint1, linePoint2);
-	it--;
-
-	double factor = 1.0;
-	if(it->pathVel > linePoint1.pathVel + lineSlope * (it->pathPos - linePoint1.pathPos))
-		factor = -1.0;
-	it++;
-	
-	while(it != trajectory.end() && factor * it->pathVel < factor * (linePoint1.pathVel + lineSlope * (it->pathPos - linePoint1.pathPos))) {
-		it++;
-	}
-
-	if(it == trajectory.end()) {
-		return TrajectoryStep(0.0, 0.0);
-	}
-	else {
-		const double trajectorySlope = getSlope(it);
-		const double intersectionPathPos = (it->pathVel - linePoint1.pathVel + lineSlope * linePoint1.pathPos - trajectorySlope * it->pathPos)
-			/ (lineSlope - trajectorySlope);
-		const double intersectionPathVel = linePoint1.pathVel + lineSlope * (intersectionPathPos - linePoint1.pathPos);
-		return TrajectoryStep(intersectionPathPos, intersectionPathVel);
-	}
-}
-
 
 double Trajectory::getMinMaxPathAcceleration(double pathPos, double pathVel, bool max) {
 	VectorXd configDeriv = path.getTangent(pathPos);
