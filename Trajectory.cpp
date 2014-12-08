@@ -277,12 +277,13 @@ bool Trajectory::integrateForward(list<TrajectoryStep> &trajectory, double accel
 			// find more accurate intersection with max-velocity curve using bisection
 			TrajectoryStep overshoot = trajectory.back();
 			trajectory.pop_back();
-			double slope = (overshoot.pathVel - trajectory.back().pathVel) / (overshoot.pathPos - trajectory.back().pathPos);
 			double before = trajectory.back().pathPos;
+			double beforePathVel = trajectory.back().pathVel;
 			double after = overshoot.pathPos;
+			double afterPathVel = overshoot.pathVel;
 			while(after - before > eps) {
 				const double midpoint = 0.5 * (before + after);
-				double midpointPathVel = trajectory.back().pathVel + slope * (midpoint - trajectory.back().pathPos);
+				double midpointPathVel = 0.5 * (beforePathVel + afterPathVel);
 
 				if(midpointPathVel > getVelocityMaxPathVelocity(midpoint)
 					&& getMinMaxPhaseSlope(before, getVelocityMaxPathVelocity(before), false) <= getVelocityMaxPathVelocityDeriv(before))
@@ -290,12 +291,16 @@ bool Trajectory::integrateForward(list<TrajectoryStep> &trajectory, double accel
 					midpointPathVel = getVelocityMaxPathVelocity(midpoint);
 				}
 
-				if(midpointPathVel > getAccelerationMaxPathVelocity(midpoint) || midpointPathVel > getVelocityMaxPathVelocity(midpoint))
+				if(midpointPathVel > getAccelerationMaxPathVelocity(midpoint) || midpointPathVel > getVelocityMaxPathVelocity(midpoint)) {
 					after = midpoint;
-				else
+					afterPathVel = midpointPathVel;
+				}
+				else {
 					before = midpoint;
+					beforePathVel = midpointPathVel;
+				}
 			}
-			trajectory.push_back(TrajectoryStep(before, trajectory.back().pathVel + slope * (before - trajectory.back().pathPos)));
+			trajectory.push_back(TrajectoryStep(before, beforePathVel));
 		
 			if(getAccelerationMaxPathVelocity(after) < getVelocityMaxPathVelocity(after)) {
 				if(after > nextDiscontinuity->first) {
