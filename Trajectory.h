@@ -45,7 +45,7 @@ class Trajectory
 {
 public:
 	// Generates a time-optimal trajectory
-	Trajectory(const Path &path, const Eigen::VectorXd &maxVelocity, const Eigen::VectorXd &maxAcceleration);
+	Trajectory(const Path &path, const Eigen::VectorXd &maxVelocity, const Eigen::VectorXd &maxAcceleration, double timeStep = 0.001);
 	
 	~Trajectory(void);
 
@@ -102,7 +102,7 @@ private:
 	std::list<TrajectoryStep> endTrajectory; // non-empty only if the trajectory generation failed.
 
 	static const double eps;
-	static const double timeStep;
+	const double timeStep;
 
 	mutable double cachedTime;
 	mutable std::list<TrajectoryStep>::const_iterator cachedTrajectorySegment;

@@ -44,19 +44,19 @@
 using namespace Eigen;
 using namespace std;
 
-const double Trajectory::timeStep = 0.001;
 const double Trajectory::eps = 0.000001;
 
 static double squared(double d) {
 	return d * d;
 }
 
-Trajectory::Trajectory(const Path &path, const VectorXd &maxVelocity, const VectorXd &maxAcceleration) :
+Trajectory::Trajectory(const Path &path, const VectorXd &maxVelocity, const VectorXd &maxAcceleration, double timeStep) :
 	path(path),
 	maxVelocity(maxVelocity),
 	maxAcceleration(maxAcceleration),
 	n(maxVelocity.size()),
 	valid(true),
+	timeStep(timeStep),
 	cachedTime(numeric_limits<double>::max())
 {
 	trajectory.push_back(TrajectoryStep(0.0, 0.0));
@@ -90,9 +90,6 @@ Trajectory::Trajectory(const Path &path, const VectorXd &maxVelocity, const Vect
 			it++;
 		}
 	}
-	else {
-		outputPhasePlaneTrajectory();
-	}
 }
 
 Trajectory::~Trajectory(void) {
@@ -100,7 +97,8 @@ Trajectory::~Trajectory(void) {
 
 void Trajectory::outputPhasePlaneTrajectory() const {
 	ofstream file1("maxVelocity.txt");
-	for(double s = 0.0; s < path.getLength(); s += 0.0001) {
+	const double stepSize = path.getLength() / 100000.0;
+	for(double s = 0.0; s < path.getLength(); s += stepSize) {
 		double maxVelocity = getAccelerationMaxPathVelocity(s);
 		if(maxVelocity == numeric_limits<double>::infinity())
 			maxVelocity = 10.0;
