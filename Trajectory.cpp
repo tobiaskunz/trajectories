@@ -469,10 +469,10 @@ VectorXd Trajectory::getPosition(double time) const {
 	previous--;
 	
 	double timeStep = it->time - previous->time;
-	const double acceleration = (it->pathPos - previous->pathPos - timeStep * previous->pathVel) / (timeStep * timeStep);
+	const double acceleration = 2.0 * (it->pathPos - previous->pathPos - timeStep * previous->pathVel) / (timeStep * timeStep);
 
 	timeStep = time - previous->time;
-	const double pathPos = previous->pathPos + timeStep * previous->pathVel + timeStep * timeStep * acceleration; 
+	const double pathPos = previous->pathPos + timeStep * previous->pathVel + 0.5 * timeStep * timeStep * acceleration; 
 	
 	return path.getConfig(pathPos);
 }
@@ -483,10 +483,10 @@ VectorXd Trajectory::getVelocity(double time) const {
 	previous--;
 		
 	double timeStep = it->time - previous->time;
-	const double acceleration = (it->pathPos - previous->pathPos - timeStep * previous->pathVel) / (timeStep * timeStep);
+	const double acceleration = 2.0 * (it->pathPos - previous->pathPos - timeStep * previous->pathVel) / (timeStep * timeStep);
 
 	timeStep = time - previous->time;
-	const double pathPos = previous->pathPos + timeStep * previous->pathVel + timeStep * timeStep * acceleration; 
+	const double pathPos = previous->pathPos + timeStep * previous->pathVel + 0.5 * timeStep * timeStep * acceleration; 
 	const double pathVel = previous->pathVel + timeStep * acceleration;
 	
 	return path.getTangent(pathPos) * pathVel;
