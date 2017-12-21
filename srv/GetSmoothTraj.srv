@@ -1,0 +1,8 @@
+trajectory_msgs/JointTrajectory init_traj
+float64[] max_acc
+float64[] max_vel
+float64 max_dev
+float64 dt
+---
+trajectory_msgs/JointTrajectory smooth_traj
+float64 duration
