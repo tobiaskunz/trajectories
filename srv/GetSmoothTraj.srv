@@ -6,3 +6,4 @@ float64 dt
 ---
 trajectory_msgs/JointTrajectory smooth_traj
 float64 duration
+bool success

@@ -52,6 +52,8 @@ if __name__=='__main__':
     rospy.wait_for_service('/get_smooth_trajectory')
     traj_call=rospy.ServiceProxy('/get_smooth_trajectory',GetSmoothTraj)
     resp=traj_call(j_traj,max_acc,max_vel,0.01,0.001)
+    # send joint trajectory command:
+    
     #print resp.smooth_traj
-    plot_j_acc_profile(resp.smooth_traj,1)
+    #plot_j_acc_profile(resp.smooth_traj,1)
     

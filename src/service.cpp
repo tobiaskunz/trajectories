@@ -98,19 +98,21 @@ bool srv_call(trajectory_smoothing::GetSmoothTraj::Request &req, trajectory_smoo
         // using finite differencing to get acceleration:
         if(t==0.0)
         {
-          pt.accelerations[j]=trajectory.getVelocity(t+dt)[j]-trajectory.getVelocity(t)[j];
+          pt.accelerations[j]=(trajectory.getVelocity(t+dt)[j]-trajectory.getVelocity(t)[j])/dt;
         }
         else
         {
-          pt.accelerations[j]=trajectory.getVelocity(t)[j]-trajectory.getVelocity(t-dt)[j];
+          pt.accelerations[j]=(trajectory.getVelocity(t)[j]-trajectory.getVelocity(t-dt)[j])/dt;
         }
       }
       out_traj.points.push_back(pt);
     }
+    res.success=true;
   }
   else
   {
     cout << "Trajectory generation failed." << endl;
+    res.success=false;
   }
   res.smooth_traj=out_traj;
  
