@@ -124,7 +124,7 @@ int main(int argc,char** argv)
 {
   ros::init(argc,argv,"trajectory_smoothing_server");
   ros::NodeHandle n;
-  ros::ServiceServer service=n.advertiseService("/get_smooth_trajectory",srv_call);
+  ros::ServiceServer service=n.advertiseService("get_smooth_trajectory",srv_call);
   ros::spin();
   return 1;
 }

@@ -143,6 +143,7 @@ target_link_libraries(example ${catkin_LIBRARIES})
 
 add_executable(service src/service.cpp src/Trajectory.cpp src/Path.cpp)
 target_link_libraries(service ${catkin_LIBRARIES})
+add_dependencies(service ${PROJECT_NAME}_generate_messages_cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
