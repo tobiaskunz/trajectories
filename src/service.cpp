@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2019 University of Utah
  * Copyright (c) 2012, Georgia Tech Research Corporation
  * All rights reserved.
  *
