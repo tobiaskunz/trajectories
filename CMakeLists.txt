@@ -139,9 +139,11 @@ ${EIGEN3_INCLUDE_DIR}
 ## The recommended prefix ensures that target names across packages don't collide
 # add_executable(${PROJECT_NAME}_node src/trajectory_smoothing_node.cpp)
 add_executable(example src/Example.cpp src/Trajectory.cpp src/Path.cpp)
+add_dependencies(example ${PROJECT_NAME}_generate_messages_cpp)
 target_link_libraries(example ${catkin_LIBRARIES})
 
 add_executable(service src/service.cpp src/Trajectory.cpp src/Path.cpp)
+add_dependencies(service ${PROJECT_NAME}_generate_messages_cpp)
 target_link_libraries(service ${catkin_LIBRARIES})
 add_dependencies(service ${PROJECT_NAME}_generate_messages_cpp)
 
