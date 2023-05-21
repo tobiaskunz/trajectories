@@ -1,1 +1,1 @@
-from .trajectory import TrajectorySmoother
+from .trajectory import TrajectorySmoother, SmoothResult

@@ -1,6 +1,30 @@
-from .trajectory_smoothing_impl import smooth
+import time
+from dataclasses import dataclass
+from typing import Optional
+
 import numpy as np
-import math
+
+from .trajectory_smoothing_impl import smooth, test
+
+
+@dataclass
+class SmoothResult:
+    success: bool
+    length: Optional[int] = None
+    interpolation_dt: Optional[float] = None
+    position: Optional[np.ndarray] = None
+    velocity: Optional[np.ndarray] = None
+    acceleration: Optional[np.ndarray] = None
+    jerk: Optional[np.ndarray] = None
+    solve_time: float = 0.0
+
+    def __post_init__(self):
+        if self.success:
+            self.interpolation_dt = float(self.interpolation_dt)
+            self.position = self.position.astype(dtype=np.float32)
+            self.velocity = self.velocity.astype(dtype=np.float32)
+            self.acceleration = self.acceleration.astype(dtype=np.float32)
+            self.jerk = self.jerk.astype(dtype=np.float32)
 
 
 class TrajectorySmoother:
@@ -16,28 +40,41 @@ class TrajectorySmoother:
         self.max_velocity = max_velocity.astype(dtype=np.float64)
         self.max_deviation = max_deviation
 
-    def smooth_interpolate(self, trajectory: np.ndarray, dt: float = 0.1):
-        try:
-            p, v = self._smooth_interpolate(trajectory, dt)
-            return p, v
-        except:
-            return None, None
-        
-
-    def _smooth_interpolate(self, trajectory: np.ndarray, dt: float = 0.1):
+    def smooth_interpolate(
+        self,
+        trajectory: np.ndarray,
+        traj_dt: float = 0.05,
+        interpolation_dt: float = 0.01,
+        max_tsteps: int = -1,
+    ) -> SmoothResult:
+        st_time = time.time()
         traj = trajectory.astype(dtype=np.float64)
-        out = smooth(
+
+        (out0, out1, out2, out3, out4, out5, out6) = smooth(
             self.dof,
-            dt,
+            interpolation_dt,
             self.max_deviation,
             self.max_velocity,
             self.max_acceleration,
             traj,
+            traj_dt,
+            max_tsteps,
         )
-        if out.shape[0] == 1:
-            return None, None
+        if not out0:
+            return SmoothResult(False, solve_time=time.time() - st_time)
 
-        max_length = math.ceil(out.shape[0] / 2)
-        traj_positions = out[:max_length, :]
-        traj_velocities = out[max_length:, :]
-        return traj_positions.astype(np.float32), traj_velocities.astype(np.float32)
+        result = SmoothResult(
+            out0,
+            out1,
+            out2,
+            out3,
+            out4,
+            out5,
+            out6,
+            time.time() - st_time,
+        )
+
+        return result
+
+    def test(self):
+        return test()
