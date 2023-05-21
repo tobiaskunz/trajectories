@@ -9,6 +9,7 @@ with bounded acceleration and velocity." Robotics: Science and Systems VIII (201
 original cpp code: https://github.com/tobiaskunz/trajectories
 
 
+
 There are two wrappers in this repository:
 
 1. ros_1 wrapper: https://github.com/balakumar-s/trajectory_smoothing/tree/v0.1
@@ -18,4 +19,6 @@ There are two wrappers in this repository:
 ## Installing the python wrapper
 
 1. `pip install trajectory_smoothing @ https://github.com/balakumar-s/trajectory_smoothing.git`
-2. Look at `examples/smooth_example.py` for an example.
+2. Look at `examples/smooth_example.py` for an example which will draw a plot as below:
+
+![Plot](plot.png)
